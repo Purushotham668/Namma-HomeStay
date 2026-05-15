@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "821283140355",
+    "firebase_url": "https://mindmatrix-proj1-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "mindmatrix-proj1",
+    "storage_bucket": "mindmatrix-proj1.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:821283140355:android:c21dadb4c023366ed1af36",
+        "android_client_info": {
+          "package_name": "com.nammahomestay.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "821283140355-k64ark4g90m7ol3fbv84lvemfam0rcuc.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.nammahomestay.app",
+            "certificate_hash": "9b7c42db299595c254f336a588632f3d33f5cc93"
+          }
+        },
+        {
+          "client_id": "821283140355-lrpte2668843pui5g3lcdp025u7795ls.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC1drsWgir00boVs-MP0U7avfYT53iHi6k"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "821283140355-lrpte2668843pui5g3lcdp025u7795ls.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

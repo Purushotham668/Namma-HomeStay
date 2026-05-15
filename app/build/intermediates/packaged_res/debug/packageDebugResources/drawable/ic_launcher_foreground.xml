@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- A simple house icon representing HomeStay -->
+    <path
+        android:fillColor="#FFF8E7"
+        android:pathData="M54,24L24,51h9l0,33h18l0,-18h6l0,18h18l0,-33h9z" />
+</vector>

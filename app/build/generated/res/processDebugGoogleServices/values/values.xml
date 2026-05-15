@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="default_web_client_id" translatable="false">821283140355-lrpte2668843pui5g3lcdp025u7795ls.apps.googleusercontent.com</string>
+    <string name="firebase_database_url" translatable="false">https://mindmatrix-proj1-default-rtdb.asia-southeast1.firebasedatabase.app</string>
+    <string name="gcm_defaultSenderId" translatable="false">821283140355</string>
+    <string name="google_api_key" translatable="false">AIzaSyC1drsWgir00boVs-MP0U7avfYT53iHi6k</string>
+    <string name="google_app_id" translatable="false">1:821283140355:android:c21dadb4c023366ed1af36</string>
+    <string name="google_crash_reporting_api_key" translatable="false">AIzaSyC1drsWgir00boVs-MP0U7avfYT53iHi6k</string>
+    <string name="google_storage_bucket" translatable="false">mindmatrix-proj1.firebasestorage.app</string>
+    <string name="project_id" translatable="false">mindmatrix-proj1</string>
+</resources>

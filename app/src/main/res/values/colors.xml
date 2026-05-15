@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Primary warm palette -->
+    <color name="earth_brown">#6D4C41</color>
+    <color name="earth_brown_dark">#3E2723</color>
+    <color name="earth_brown_light">#BCAAA4</color>
+    <color name="leaf_green">#558B2F</color>
+    <color name="leaf_green_dark">#33691E</color>
+    <color name="leaf_green_light">#C5E1A5</color>
+    <color name="warm_orange">#FF8F00</color>
+    <color name="warm_orange_light">#FFE082</color>
+    <color name="warm_orange_dark">#E65100</color>
+
+    <!-- Neutral / Surface -->
+    <color name="soft_cream">#FFF8E7</color>
+    <color name="surface_warm">#FFF3E0</color>
+    <color name="card_surface">#FFFBF5</color>
+    <color name="divider_color">#EDD9C0</color>
+
+    <!-- Text -->
+    <color name="text_primary">#2C1A0E</color>
+    <color name="text_secondary">#6D5147</color>
+    <color name="text_hint">#BCAAA4</color>
+
+    <!-- Status -->
+    <color name="success_green">#43A047</color>
+    <color name="error_red">#E53935</color>
+</resources>

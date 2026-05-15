@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="card_surface">#FFFBF5</color>
+    <color name="divider_color">#EDD9C0</color>
+    <color name="earth_brown">#6D4C41</color>
+    <color name="earth_brown_dark">#3E2723</color>
+    <color name="earth_brown_light">#BCAAA4</color>
+    <color name="error_red">#E53935</color>
+    <color name="leaf_green">#558B2F</color>
+    <color name="leaf_green_dark">#33691E</color>
+    <color name="leaf_green_light">#C5E1A5</color>
+    <color name="soft_cream">#FFF8E7</color>
+    <color name="success_green">#43A047</color>
+    <color name="surface_warm">#FFF3E0</color>
+    <color name="text_hint">#BCAAA4</color>
+    <color name="text_primary">#2C1A0E</color>
+    <color name="text_secondary">#6D5147</color>
+    <color name="warm_orange">#FF8F00</color>
+    <color name="warm_orange_dark">#E65100</color>
+    <color name="warm_orange_light">#FFE082</color>
+    <string name="add_spot">Add Spot</string>
+    <string name="address">Address</string>
+    <string name="app_name">Namma HomeStay</string>
+    <string name="available">Available</string>
+    <string name="breakfast">Breakfast</string>
+    <string name="call_host">Call Host</string>
+    <string name="call_now">Call Now</string>
+    <string name="change_password">Change Password</string>
+    <string name="confirm_password">Confirm Password</string>
+    <string name="contact_number">Contact Number</string>
+    <string name="daily_menu">Daily Menu Update</string>
+    <string name="default_web_client_id" translatable="false">821283140355-lrpte2668843pui5g3lcdp025u7795ls.apps.googleusercontent.com</string>
+    <string name="description">Description</string>
+    <string name="dinner">Dinner</string>
+    <string name="distance">Distance (e.g. 5 km)</string>
+    <string name="edit_profile">Edit Profile</string>
+    <string name="email">Email Address</string>
+    <string name="error_generic">Something went wrong. Please try again.</string>
+    <string name="explore">Explore HomeStays</string>
+    <string name="firebase_database_url" translatable="false">https://mindmatrix-proj1-default-rtdb.asia-southeast1.firebasedatabase.app</string>
+    <string name="full">Full</string>
+    <string name="full_name">Full Name</string>
+    <string name="gcm_defaultSenderId" translatable="false">821283140355</string>
+    <string name="google_api_key" translatable="false">AIzaSyC1drsWgir00boVs-MP0U7avfYT53iHi6k</string>
+    <string name="google_app_id" translatable="false">1:821283140355:android:c21dadb4c023366ed1af36</string>
+    <string name="google_crash_reporting_api_key" translatable="false">AIzaSyC1drsWgir00boVs-MP0U7avfYT53iHi6k</string>
+    <string name="google_storage_bucket" translatable="false">mindmatrix-proj1.firebasestorage.app</string>
+    <string name="home_profile">Home Profile</string>
+    <string name="homestay_name">HomeStay Name</string>
+    <string name="inquiry_box">Inquiry Box</string>
+    <string name="loading">Loading…</string>
+    <string name="local_guide">Local Guide</string>
+    <string name="login">Login</string>
+    <string name="logout">Logout</string>
+    <string name="lunch">Lunch</string>
+    <string name="mark_responded">Mark Responded</string>
+    <string name="my_inquiries">My Inquiries</string>
+    <string name="no_inquiries">No inquiries yet</string>
+    <string name="owner_name">Owner Name</string>
+    <string name="password">Password</string>
+    <string name="phone_number">Phone Number</string>
+    <string name="place_name">Place Name</string>
+    <string name="price_per_day">Price Per Day (₹)</string>
+    <string name="price_per_person">Price Per Person (₹)</string>
+    <string name="pricing">Pricing &amp; Availability</string>
+    <string name="project_id" translatable="false">mindmatrix-proj1</string>
+    <string name="register">Register</string>
+    <string name="role_provider">HomeStay Provider</string>
+    <string name="role_traveler">Traveler</string>
+    <string name="rooms_available">Rooms Available</string>
+    <string name="save_profile">Save Profile</string>
+    <string name="search_hint">Search by location or name…</string>
+    <string name="select_role">Select Your Role</string>
+    <string name="send_inquiry">Send Inquiry</string>
+    <string name="settings">Settings</string>
+    <string name="submit_inquiry">Submit Inquiry</string>
+    <string name="tagline">Rural Hospitality, Warmly Yours</string>
+    <string name="todays_special">Today\'s Special Dish</string>
+    <string name="update_menu">Update Menu</string>
+    <string name="view_details">View Details</string>
+    <string name="your_message">Your Message</string>
+    <style name="Theme.NammaHomeStay" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/soft_cream</item>
+        <item name="android:statusBarColor">@color/earth_brown</item>
+        <item name="android:navigationBarColor">@color/earth_brown</item>
+    </style>
+</resources>

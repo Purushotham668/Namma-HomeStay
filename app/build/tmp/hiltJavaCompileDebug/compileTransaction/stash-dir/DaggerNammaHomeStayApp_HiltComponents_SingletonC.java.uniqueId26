@@ -1,0 +1,1101 @@
+package com.nammahomestay.app;
+
+import android.app.Activity;
+import android.app.Service;
+import android.view.View;
+import androidx.fragment.app.Fragment;
+import androidx.lifecycle.SavedStateHandle;
+import androidx.lifecycle.ViewModel;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.storage.FirebaseStorage;
+import com.nammahomestay.app.data.repository.AuthRepository;
+import com.nammahomestay.app.data.repository.BookingRepository;
+import com.nammahomestay.app.data.repository.FoodRepository;
+import com.nammahomestay.app.data.repository.HomeStayRepository;
+import com.nammahomestay.app.data.repository.InquiryRepository;
+import com.nammahomestay.app.data.repository.LocalSpotRepository;
+import com.nammahomestay.app.data.repository.MenuRepository;
+import com.nammahomestay.app.data.repository.UserRepository;
+import com.nammahomestay.app.di.FirebaseModule_ProvideFirebaseAuthFactory;
+import com.nammahomestay.app.di.FirebaseModule_ProvideFirebaseFirestoreFactory;
+import com.nammahomestay.app.di.FirebaseModule_ProvideFirebaseStorageFactory;
+import com.nammahomestay.app.service.NammaFirebaseMessagingService;
+import com.nammahomestay.app.service.NammaFirebaseMessagingService_MembersInjector;
+import com.nammahomestay.app.ui.auth.AuthViewModel;
+import com.nammahomestay.app.ui.auth.AuthViewModel_HiltModules;
+import com.nammahomestay.app.ui.provider.booking.ProviderBookingsViewModel;
+import com.nammahomestay.app.ui.provider.booking.ProviderBookingsViewModel_HiltModules;
+import com.nammahomestay.app.ui.provider.dashboard.ProviderDashboardViewModel;
+import com.nammahomestay.app.ui.provider.dashboard.ProviderDashboardViewModel_HiltModules;
+import com.nammahomestay.app.ui.provider.food.FoodAnalyticsViewModel;
+import com.nammahomestay.app.ui.provider.food.FoodAnalyticsViewModel_HiltModules;
+import com.nammahomestay.app.ui.provider.food.FoodVerificationViewModel;
+import com.nammahomestay.app.ui.provider.food.FoodVerificationViewModel_HiltModules;
+import com.nammahomestay.app.ui.provider.food.ProviderFoodTerminalViewModel;
+import com.nammahomestay.app.ui.provider.food.ProviderFoodTerminalViewModel_HiltModules;
+import com.nammahomestay.app.ui.provider.inquiry.InquiryBoxViewModel;
+import com.nammahomestay.app.ui.provider.inquiry.InquiryBoxViewModel_HiltModules;
+import com.nammahomestay.app.ui.provider.localguide.LocalGuideViewModel;
+import com.nammahomestay.app.ui.provider.localguide.LocalGuideViewModel_HiltModules;
+import com.nammahomestay.app.ui.provider.menu.DailyMenuViewModel;
+import com.nammahomestay.app.ui.provider.menu.DailyMenuViewModel_HiltModules;
+import com.nammahomestay.app.ui.provider.pricing.PricingViewModel;
+import com.nammahomestay.app.ui.provider.pricing.PricingViewModel_HiltModules;
+import com.nammahomestay.app.ui.provider.profile.HomeProfileViewModel;
+import com.nammahomestay.app.ui.provider.profile.HomeProfileViewModel_HiltModules;
+import com.nammahomestay.app.ui.provider.verification.QRScannerViewModel;
+import com.nammahomestay.app.ui.provider.verification.QRScannerViewModel_HiltModules;
+import com.nammahomestay.app.ui.traveler.booking.BookingViewModel;
+import com.nammahomestay.app.ui.traveler.booking.BookingViewModel_HiltModules;
+import com.nammahomestay.app.ui.traveler.booking.MyBookingsViewModel;
+import com.nammahomestay.app.ui.traveler.booking.MyBookingsViewModel_HiltModules;
+import com.nammahomestay.app.ui.traveler.booking.ReviewViewModel;
+import com.nammahomestay.app.ui.traveler.booking.ReviewViewModel_HiltModules;
+import com.nammahomestay.app.ui.traveler.dashboard.TravelerDashboardViewModel;
+import com.nammahomestay.app.ui.traveler.dashboard.TravelerDashboardViewModel_HiltModules;
+import com.nammahomestay.app.ui.traveler.explore.ExploreViewModel;
+import com.nammahomestay.app.ui.traveler.explore.ExploreViewModel_HiltModules;
+import com.nammahomestay.app.ui.traveler.food.FoodTicketViewModel;
+import com.nammahomestay.app.ui.traveler.food.FoodTicketViewModel_HiltModules;
+import com.nammahomestay.app.ui.traveler.food.MealBookingViewModel;
+import com.nammahomestay.app.ui.traveler.food.MealBookingViewModel_HiltModules;
+import com.nammahomestay.app.ui.traveler.inquiry.ChatViewModel;
+import com.nammahomestay.app.ui.traveler.inquiry.ChatViewModel_HiltModules;
+import com.nammahomestay.app.ui.traveler.inquiry.MyInquiriesViewModel;
+import com.nammahomestay.app.ui.traveler.inquiry.MyInquiriesViewModel_HiltModules;
+import com.nammahomestay.app.ui.traveler.inquiry.SendInquiryViewModel;
+import com.nammahomestay.app.ui.traveler.inquiry.SendInquiryViewModel_HiltModules;
+import com.nammahomestay.app.ui.traveler.settings.ProfileSettingsViewModel;
+import com.nammahomestay.app.ui.traveler.settings.ProfileSettingsViewModel_HiltModules;
+import com.nammahomestay.app.util.FirestoreInitializer;
+import dagger.hilt.android.ActivityRetainedLifecycle;
+import dagger.hilt.android.ViewModelLifecycle;
+import dagger.hilt.android.internal.builders.ActivityComponentBuilder;
+import dagger.hilt.android.internal.builders.ActivityRetainedComponentBuilder;
+import dagger.hilt.android.internal.builders.FragmentComponentBuilder;
+import dagger.hilt.android.internal.builders.ServiceComponentBuilder;
+import dagger.hilt.android.internal.builders.ViewComponentBuilder;
+import dagger.hilt.android.internal.builders.ViewModelComponentBuilder;
+import dagger.hilt.android.internal.builders.ViewWithFragmentComponentBuilder;
+import dagger.hilt.android.internal.lifecycle.DefaultViewModelFactories;
+import dagger.hilt.android.internal.lifecycle.DefaultViewModelFactories_InternalFactoryFactory_Factory;
+import dagger.hilt.android.internal.managers.ActivityRetainedComponentManager_LifecycleModule_ProvideActivityRetainedLifecycleFactory;
+import dagger.hilt.android.internal.managers.SavedStateHandleHolder;
+import dagger.hilt.android.internal.modules.ApplicationContextModule;
+import dagger.hilt.android.internal.modules.ApplicationContextModule_ProvideContextFactory;
+import dagger.internal.DaggerGenerated;
+import dagger.internal.DoubleCheck;
+import dagger.internal.IdentifierNameString;
+import dagger.internal.KeepFieldType;
+import dagger.internal.LazyClassKeyMap;
+import dagger.internal.Preconditions;
+import dagger.internal.Provider;
+import java.util.Map;
+import java.util.Set;
+import javax.annotation.processing.Generated;
+
+@DaggerGenerated
+@Generated(
+    value = "dagger.internal.codegen.ComponentProcessor",
+    comments = "https://dagger.dev"
+)
+@SuppressWarnings({
+    "unchecked",
+    "rawtypes",
+    "KotlinInternal",
+    "KotlinInternalInJava",
+    "cast"
+})
+public final class DaggerNammaHomeStayApp_HiltComponents_SingletonC {
+  private DaggerNammaHomeStayApp_HiltComponents_SingletonC() {
+  }
+
+  public static Builder builder() {
+    return new Builder();
+  }
+
+  public static final class Builder {
+    private ApplicationContextModule applicationContextModule;
+
+    private Builder() {
+    }
+
+    public Builder applicationContextModule(ApplicationContextModule applicationContextModule) {
+      this.applicationContextModule = Preconditions.checkNotNull(applicationContextModule);
+      return this;
+    }
+
+    public NammaHomeStayApp_HiltComponents.SingletonC build() {
+      Preconditions.checkBuilderRequirement(applicationContextModule, ApplicationContextModule.class);
+      return new SingletonCImpl(applicationContextModule);
+    }
+  }
+
+  private static final class ActivityRetainedCBuilder implements NammaHomeStayApp_HiltComponents.ActivityRetainedC.Builder {
+    private final SingletonCImpl singletonCImpl;
+
+    private SavedStateHandleHolder savedStateHandleHolder;
+
+    private ActivityRetainedCBuilder(SingletonCImpl singletonCImpl) {
+      this.singletonCImpl = singletonCImpl;
+    }
+
+    @Override
+    public ActivityRetainedCBuilder savedStateHandleHolder(
+        SavedStateHandleHolder savedStateHandleHolder) {
+      this.savedStateHandleHolder = Preconditions.checkNotNull(savedStateHandleHolder);
+      return this;
+    }
+
+    @Override
+    public NammaHomeStayApp_HiltComponents.ActivityRetainedC build() {
+      Preconditions.checkBuilderRequirement(savedStateHandleHolder, SavedStateHandleHolder.class);
+      return new ActivityRetainedCImpl(singletonCImpl, savedStateHandleHolder);
+    }
+  }
+
+  private static final class ActivityCBuilder implements NammaHomeStayApp_HiltComponents.ActivityC.Builder {
+    private final SingletonCImpl singletonCImpl;
+
+    private final ActivityRetainedCImpl activityRetainedCImpl;
+
+    private Activity activity;
+
+    private ActivityCBuilder(SingletonCImpl singletonCImpl,
+        ActivityRetainedCImpl activityRetainedCImpl) {
+      this.singletonCImpl = singletonCImpl;
+      this.activityRetainedCImpl = activityRetainedCImpl;
+    }
+
+    @Override
+    public ActivityCBuilder activity(Activity activity) {
+      this.activity = Preconditions.checkNotNull(activity);
+      return this;
+    }
+
+    @Override
+    public NammaHomeStayApp_HiltComponents.ActivityC build() {
+      Preconditions.checkBuilderRequirement(activity, Activity.class);
+      return new ActivityCImpl(singletonCImpl, activityRetainedCImpl, activity);
+    }
+  }
+
+  private static final class FragmentCBuilder implements NammaHomeStayApp_HiltComponents.FragmentC.Builder {
+    private final SingletonCImpl singletonCImpl;
+
+    private final ActivityRetainedCImpl activityRetainedCImpl;
+
+    private final ActivityCImpl activityCImpl;
+
+    private Fragment fragment;
+
+    private FragmentCBuilder(SingletonCImpl singletonCImpl,
+        ActivityRetainedCImpl activityRetainedCImpl, ActivityCImpl activityCImpl) {
+      this.singletonCImpl = singletonCImpl;
+      this.activityRetainedCImpl = activityRetainedCImpl;
+      this.activityCImpl = activityCImpl;
+    }
+
+    @Override
+    public FragmentCBuilder fragment(Fragment fragment) {
+      this.fragment = Preconditions.checkNotNull(fragment);
+      return this;
+    }
+
+    @Override
+    public NammaHomeStayApp_HiltComponents.FragmentC build() {
+      Preconditions.checkBuilderRequirement(fragment, Fragment.class);
+      return new FragmentCImpl(singletonCImpl, activityRetainedCImpl, activityCImpl, fragment);
+    }
+  }
+
+  private static final class ViewWithFragmentCBuilder implements NammaHomeStayApp_HiltComponents.ViewWithFragmentC.Builder {
+    private final SingletonCImpl singletonCImpl;
+
+    private final ActivityRetainedCImpl activityRetainedCImpl;
+
+    private final ActivityCImpl activityCImpl;
+
+    private final FragmentCImpl fragmentCImpl;
+
+    private View view;
+
+    private ViewWithFragmentCBuilder(SingletonCImpl singletonCImpl,
+        ActivityRetainedCImpl activityRetainedCImpl, ActivityCImpl activityCImpl,
+        FragmentCImpl fragmentCImpl) {
+      this.singletonCImpl = singletonCImpl;
+      this.activityRetainedCImpl = activityRetainedCImpl;
+      this.activityCImpl = activityCImpl;
+      this.fragmentCImpl = fragmentCImpl;
+    }
+
+    @Override
+    public ViewWithFragmentCBuilder view(View view) {
+      this.view = Preconditions.checkNotNull(view);
+      return this;
+    }
+
+    @Override
+    public NammaHomeStayApp_HiltComponents.ViewWithFragmentC build() {
+      Preconditions.checkBuilderRequirement(view, View.class);
+      return new ViewWithFragmentCImpl(singletonCImpl, activityRetainedCImpl, activityCImpl, fragmentCImpl, view);
+    }
+  }
+
+  private static final class ViewCBuilder implements NammaHomeStayApp_HiltComponents.ViewC.Builder {
+    private final SingletonCImpl singletonCImpl;
+
+    private final ActivityRetainedCImpl activityRetainedCImpl;
+
+    private final ActivityCImpl activityCImpl;
+
+    private View view;
+
+    private ViewCBuilder(SingletonCImpl singletonCImpl, ActivityRetainedCImpl activityRetainedCImpl,
+        ActivityCImpl activityCImpl) {
+      this.singletonCImpl = singletonCImpl;
+      this.activityRetainedCImpl = activityRetainedCImpl;
+      this.activityCImpl = activityCImpl;
+    }
+
+    @Override
+    public ViewCBuilder view(View view) {
+      this.view = Preconditions.checkNotNull(view);
+      return this;
+    }
+
+    @Override
+    public NammaHomeStayApp_HiltComponents.ViewC build() {
+      Preconditions.checkBuilderRequirement(view, View.class);
+      return new ViewCImpl(singletonCImpl, activityRetainedCImpl, activityCImpl, view);
+    }
+  }
+
+  private static final class ViewModelCBuilder implements NammaHomeStayApp_HiltComponents.ViewModelC.Builder {
+    private final SingletonCImpl singletonCImpl;
+
+    private final ActivityRetainedCImpl activityRetainedCImpl;
+
+    private SavedStateHandle savedStateHandle;
+
+    private ViewModelLifecycle viewModelLifecycle;
+
+    private ViewModelCBuilder(SingletonCImpl singletonCImpl,
+        ActivityRetainedCImpl activityRetainedCImpl) {
+      this.singletonCImpl = singletonCImpl;
+      this.activityRetainedCImpl = activityRetainedCImpl;
+    }
+
+    @Override
+    public ViewModelCBuilder savedStateHandle(SavedStateHandle handle) {
+      this.savedStateHandle = Preconditions.checkNotNull(handle);
+      return this;
+    }
+
+    @Override
+    public ViewModelCBuilder viewModelLifecycle(ViewModelLifecycle viewModelLifecycle) {
+      this.viewModelLifecycle = Preconditions.checkNotNull(viewModelLifecycle);
+      return this;
+    }
+
+    @Override
+    public NammaHomeStayApp_HiltComponents.ViewModelC build() {
+      Preconditions.checkBuilderRequirement(savedStateHandle, SavedStateHandle.class);
+      Preconditions.checkBuilderRequirement(viewModelLifecycle, ViewModelLifecycle.class);
+      return new ViewModelCImpl(singletonCImpl, activityRetainedCImpl, savedStateHandle, viewModelLifecycle);
+    }
+  }
+
+  private static final class ServiceCBuilder implements NammaHomeStayApp_HiltComponents.ServiceC.Builder {
+    private final SingletonCImpl singletonCImpl;
+
+    private Service service;
+
+    private ServiceCBuilder(SingletonCImpl singletonCImpl) {
+      this.singletonCImpl = singletonCImpl;
+    }
+
+    @Override
+    public ServiceCBuilder service(Service service) {
+      this.service = Preconditions.checkNotNull(service);
+      return this;
+    }
+
+    @Override
+    public NammaHomeStayApp_HiltComponents.ServiceC build() {
+      Preconditions.checkBuilderRequirement(service, Service.class);
+      return new ServiceCImpl(singletonCImpl, service);
+    }
+  }
+
+  private static final class ViewWithFragmentCImpl extends NammaHomeStayApp_HiltComponents.ViewWithFragmentC {
+    private final SingletonCImpl singletonCImpl;
+
+    private final ActivityRetainedCImpl activityRetainedCImpl;
+
+    private final ActivityCImpl activityCImpl;
+
+    private final FragmentCImpl fragmentCImpl;
+
+    private final ViewWithFragmentCImpl viewWithFragmentCImpl = this;
+
+    private ViewWithFragmentCImpl(SingletonCImpl singletonCImpl,
+        ActivityRetainedCImpl activityRetainedCImpl, ActivityCImpl activityCImpl,
+        FragmentCImpl fragmentCImpl, View viewParam) {
+      this.singletonCImpl = singletonCImpl;
+      this.activityRetainedCImpl = activityRetainedCImpl;
+      this.activityCImpl = activityCImpl;
+      this.fragmentCImpl = fragmentCImpl;
+
+
+    }
+  }
+
+  private static final class FragmentCImpl extends NammaHomeStayApp_HiltComponents.FragmentC {
+    private final SingletonCImpl singletonCImpl;
+
+    private final ActivityRetainedCImpl activityRetainedCImpl;
+
+    private final ActivityCImpl activityCImpl;
+
+    private final FragmentCImpl fragmentCImpl = this;
+
+    private FragmentCImpl(SingletonCImpl singletonCImpl,
+        ActivityRetainedCImpl activityRetainedCImpl, ActivityCImpl activityCImpl,
+        Fragment fragmentParam) {
+      this.singletonCImpl = singletonCImpl;
+      this.activityRetainedCImpl = activityRetainedCImpl;
+      this.activityCImpl = activityCImpl;
+
+
+    }
+
+    @Override
+    public DefaultViewModelFactories.InternalFactoryFactory getHiltInternalFactoryFactory() {
+      return activityCImpl.getHiltInternalFactoryFactory();
+    }
+
+    @Override
+    public ViewWithFragmentComponentBuilder viewWithFragmentComponentBuilder() {
+      return new ViewWithFragmentCBuilder(singletonCImpl, activityRetainedCImpl, activityCImpl, fragmentCImpl);
+    }
+  }
+
+  private static final class ViewCImpl extends NammaHomeStayApp_HiltComponents.ViewC {
+    private final SingletonCImpl singletonCImpl;
+
+    private final ActivityRetainedCImpl activityRetainedCImpl;
+
+    private final ActivityCImpl activityCImpl;
+
+    private final ViewCImpl viewCImpl = this;
+
+    private ViewCImpl(SingletonCImpl singletonCImpl, ActivityRetainedCImpl activityRetainedCImpl,
+        ActivityCImpl activityCImpl, View viewParam) {
+      this.singletonCImpl = singletonCImpl;
+      this.activityRetainedCImpl = activityRetainedCImpl;
+      this.activityCImpl = activityCImpl;
+
+
+    }
+  }
+
+  private static final class ActivityCImpl extends NammaHomeStayApp_HiltComponents.ActivityC {
+    private final SingletonCImpl singletonCImpl;
+
+    private final ActivityRetainedCImpl activityRetainedCImpl;
+
+    private final ActivityCImpl activityCImpl = this;
+
+    private ActivityCImpl(SingletonCImpl singletonCImpl,
+        ActivityRetainedCImpl activityRetainedCImpl, Activity activityParam) {
+      this.singletonCImpl = singletonCImpl;
+      this.activityRetainedCImpl = activityRetainedCImpl;
+
+
+    }
+
+    @Override
+    public void injectMainActivity(MainActivity arg0) {
+    }
+
+    @Override
+    public DefaultViewModelFactories.InternalFactoryFactory getHiltInternalFactoryFactory() {
+      return DefaultViewModelFactories_InternalFactoryFactory_Factory.newInstance(getViewModelKeys(), new ViewModelCBuilder(singletonCImpl, activityRetainedCImpl));
+    }
+
+    @Override
+    public Map<Class<?>, Boolean> getViewModelKeys() {
+      return LazyClassKeyMap.<Boolean>of(ImmutableMap.<String, Boolean>builderWithExpectedSize(23).put(LazyClassKeyProvider.com_nammahomestay_app_ui_auth_AuthViewModel, AuthViewModel_HiltModules.KeyModule.provide()).put(LazyClassKeyProvider.com_nammahomestay_app_ui_traveler_booking_BookingViewModel, BookingViewModel_HiltModules.KeyModule.provide()).put(LazyClassKeyProvider.com_nammahomestay_app_ui_traveler_inquiry_ChatViewModel, ChatViewModel_HiltModules.KeyModule.provide()).put(LazyClassKeyProvider.com_nammahomestay_app_ui_provider_menu_DailyMenuViewModel, DailyMenuViewModel_HiltModules.KeyModule.provide()).put(LazyClassKeyProvider.com_nammahomestay_app_ui_traveler_explore_ExploreViewModel, ExploreViewModel_HiltModules.KeyModule.provide()).put(LazyClassKeyProvider.com_nammahomestay_app_ui_provider_food_FoodAnalyticsViewModel, FoodAnalyticsViewModel_HiltModules.KeyModule.provide()).put(LazyClassKeyProvider.com_nammahomestay_app_ui_traveler_food_FoodTicketViewModel, FoodTicketViewModel_HiltModules.KeyModule.provide()).put(LazyClassKeyProvider.com_nammahomestay_app_ui_provider_food_FoodVerificationViewModel, FoodVerificationViewModel_HiltModules.KeyModule.provide()).put(LazyClassKeyProvider.com_nammahomestay_app_ui_provider_profile_HomeProfileViewModel, HomeProfileViewModel_HiltModules.KeyModule.provide()).put(LazyClassKeyProvider.com_nammahomestay_app_ui_provider_inquiry_InquiryBoxViewModel, InquiryBoxViewModel_HiltModules.KeyModule.provide()).put(LazyClassKeyProvider.com_nammahomestay_app_ui_provider_localguide_LocalGuideViewModel, LocalGuideViewModel_HiltModules.KeyModule.provide()).put(LazyClassKeyProvider.com_nammahomestay_app_ui_traveler_food_MealBookingViewModel, MealBookingViewModel_HiltModules.KeyModule.provide()).put(LazyClassKeyProvider.com_nammahomestay_app_ui_traveler_booking_MyBookingsViewModel, MyBookingsViewModel_HiltModules.KeyModule.provide()).put(LazyClassKeyProvider.com_nammahomestay_app_ui_traveler_inquiry_MyInquiriesViewModel, MyInquiriesViewModel_HiltModules.KeyModule.provide()).put(LazyClassKeyProvider.com_nammahomestay_app_ui_provider_pricing_PricingViewModel, PricingViewModel_HiltModules.KeyModule.provide()).put(LazyClassKeyProvider.com_nammahomestay_app_ui_traveler_settings_ProfileSettingsViewModel, ProfileSettingsViewModel_HiltModules.KeyModule.provide()).put(LazyClassKeyProvider.com_nammahomestay_app_ui_provider_booking_ProviderBookingsViewModel, ProviderBookingsViewModel_HiltModules.KeyModule.provide()).put(LazyClassKeyProvider.com_nammahomestay_app_ui_provider_dashboard_ProviderDashboardViewModel, ProviderDashboardViewModel_HiltModules.KeyModule.provide()).put(LazyClassKeyProvider.com_nammahomestay_app_ui_provider_food_ProviderFoodTerminalViewModel, ProviderFoodTerminalViewModel_HiltModules.KeyModule.provide()).put(LazyClassKeyProvider.com_nammahomestay_app_ui_provider_verification_QRScannerViewModel, QRScannerViewModel_HiltModules.KeyModule.provide()).put(LazyClassKeyProvider.com_nammahomestay_app_ui_traveler_booking_ReviewViewModel, ReviewViewModel_HiltModules.KeyModule.provide()).put(LazyClassKeyProvider.com_nammahomestay_app_ui_traveler_inquiry_SendInquiryViewModel, SendInquiryViewModel_HiltModules.KeyModule.provide()).put(LazyClassKeyProvider.com_nammahomestay_app_ui_traveler_dashboard_TravelerDashboardViewModel, TravelerDashboardViewModel_HiltModules.KeyModule.provide()).build());
+    }
+
+    @Override
+    public ViewModelComponentBuilder getViewModelComponentBuilder() {
+      return new ViewModelCBuilder(singletonCImpl, activityRetainedCImpl);
+    }
+
+    @Override
+    public FragmentComponentBuilder fragmentComponentBuilder() {
+      return new FragmentCBuilder(singletonCImpl, activityRetainedCImpl, activityCImpl);
+    }
+
+    @Override
+    public ViewComponentBuilder viewComponentBuilder() {
+      return new ViewCBuilder(singletonCImpl, activityRetainedCImpl, activityCImpl);
+    }
+
+    @IdentifierNameString
+    private static final class LazyClassKeyProvider {
+      static String com_nammahomestay_app_ui_traveler_food_FoodTicketViewModel = "com.nammahomestay.app.ui.traveler.food.FoodTicketViewModel";
+
+      static String com_nammahomestay_app_ui_provider_profile_HomeProfileViewModel = "com.nammahomestay.app.ui.provider.profile.HomeProfileViewModel";
+
+      static String com_nammahomestay_app_ui_provider_food_FoodAnalyticsViewModel = "com.nammahomestay.app.ui.provider.food.FoodAnalyticsViewModel";
+
+      static String com_nammahomestay_app_ui_traveler_booking_ReviewViewModel = "com.nammahomestay.app.ui.traveler.booking.ReviewViewModel";
+
+      static String com_nammahomestay_app_ui_traveler_booking_BookingViewModel = "com.nammahomestay.app.ui.traveler.booking.BookingViewModel";
+
+      static String com_nammahomestay_app_ui_traveler_explore_ExploreViewModel = "com.nammahomestay.app.ui.traveler.explore.ExploreViewModel";
+
+      static String com_nammahomestay_app_ui_provider_inquiry_InquiryBoxViewModel = "com.nammahomestay.app.ui.provider.inquiry.InquiryBoxViewModel";
+
+      static String com_nammahomestay_app_ui_traveler_inquiry_ChatViewModel = "com.nammahomestay.app.ui.traveler.inquiry.ChatViewModel";
+
+      static String com_nammahomestay_app_ui_provider_localguide_LocalGuideViewModel = "com.nammahomestay.app.ui.provider.localguide.LocalGuideViewModel";
+
+      static String com_nammahomestay_app_ui_provider_food_FoodVerificationViewModel = "com.nammahomestay.app.ui.provider.food.FoodVerificationViewModel";
+
+      static String com_nammahomestay_app_ui_provider_food_ProviderFoodTerminalViewModel = "com.nammahomestay.app.ui.provider.food.ProviderFoodTerminalViewModel";
+
+      static String com_nammahomestay_app_ui_auth_AuthViewModel = "com.nammahomestay.app.ui.auth.AuthViewModel";
+
+      static String com_nammahomestay_app_ui_traveler_inquiry_MyInquiriesViewModel = "com.nammahomestay.app.ui.traveler.inquiry.MyInquiriesViewModel";
+
+      static String com_nammahomestay_app_ui_provider_verification_QRScannerViewModel = "com.nammahomestay.app.ui.provider.verification.QRScannerViewModel";
+
+      static String com_nammahomestay_app_ui_traveler_inquiry_SendInquiryViewModel = "com.nammahomestay.app.ui.traveler.inquiry.SendInquiryViewModel";
+
+      static String com_nammahomestay_app_ui_traveler_dashboard_TravelerDashboardViewModel = "com.nammahomestay.app.ui.traveler.dashboard.TravelerDashboardViewModel";
+
+      static String com_nammahomestay_app_ui_provider_menu_DailyMenuViewModel = "com.nammahomestay.app.ui.provider.menu.DailyMenuViewModel";
+
+      static String com_nammahomestay_app_ui_traveler_booking_MyBookingsViewModel = "com.nammahomestay.app.ui.traveler.booking.MyBookingsViewModel";
+
+      static String com_nammahomestay_app_ui_traveler_food_MealBookingViewModel = "com.nammahomestay.app.ui.traveler.food.MealBookingViewModel";
+
+      static String com_nammahomestay_app_ui_provider_booking_ProviderBookingsViewModel = "com.nammahomestay.app.ui.provider.booking.ProviderBookingsViewModel";
+
+      static String com_nammahomestay_app_ui_provider_pricing_PricingViewModel = "com.nammahomestay.app.ui.provider.pricing.PricingViewModel";
+
+      static String com_nammahomestay_app_ui_traveler_settings_ProfileSettingsViewModel = "com.nammahomestay.app.ui.traveler.settings.ProfileSettingsViewModel";
+
+      static String com_nammahomestay_app_ui_provider_dashboard_ProviderDashboardViewModel = "com.nammahomestay.app.ui.provider.dashboard.ProviderDashboardViewModel";
+
+      @KeepFieldType
+      FoodTicketViewModel com_nammahomestay_app_ui_traveler_food_FoodTicketViewModel2;
+
+      @KeepFieldType
+      HomeProfileViewModel com_nammahomestay_app_ui_provider_profile_HomeProfileViewModel2;
+
+      @KeepFieldType
+      FoodAnalyticsViewModel com_nammahomestay_app_ui_provider_food_FoodAnalyticsViewModel2;
+
+      @KeepFieldType
+      ReviewViewModel com_nammahomestay_app_ui_traveler_booking_ReviewViewModel2;
+
+      @KeepFieldType
+      BookingViewModel com_nammahomestay_app_ui_traveler_booking_BookingViewModel2;
+
+      @KeepFieldType
+      ExploreViewModel com_nammahomestay_app_ui_traveler_explore_ExploreViewModel2;
+
+      @KeepFieldType
+      InquiryBoxViewModel com_nammahomestay_app_ui_provider_inquiry_InquiryBoxViewModel2;
+
+      @KeepFieldType
+      ChatViewModel com_nammahomestay_app_ui_traveler_inquiry_ChatViewModel2;
+
+      @KeepFieldType
+      LocalGuideViewModel com_nammahomestay_app_ui_provider_localguide_LocalGuideViewModel2;
+
+      @KeepFieldType
+      FoodVerificationViewModel com_nammahomestay_app_ui_provider_food_FoodVerificationViewModel2;
+
+      @KeepFieldType
+      ProviderFoodTerminalViewModel com_nammahomestay_app_ui_provider_food_ProviderFoodTerminalViewModel2;
+
+      @KeepFieldType
+      AuthViewModel com_nammahomestay_app_ui_auth_AuthViewModel2;
+
+      @KeepFieldType
+      MyInquiriesViewModel com_nammahomestay_app_ui_traveler_inquiry_MyInquiriesViewModel2;
+
+      @KeepFieldType
+      QRScannerViewModel com_nammahomestay_app_ui_provider_verification_QRScannerViewModel2;
+
+      @KeepFieldType
+      SendInquiryViewModel com_nammahomestay_app_ui_traveler_inquiry_SendInquiryViewModel2;
+
+      @KeepFieldType
+      TravelerDashboardViewModel com_nammahomestay_app_ui_traveler_dashboard_TravelerDashboardViewModel2;
+
+      @KeepFieldType
+      DailyMenuViewModel com_nammahomestay_app_ui_provider_menu_DailyMenuViewModel2;
+
+      @KeepFieldType
+      MyBookingsViewModel com_nammahomestay_app_ui_traveler_booking_MyBookingsViewModel2;
+
+      @KeepFieldType
+      MealBookingViewModel com_nammahomestay_app_ui_traveler_food_MealBookingViewModel2;
+
+      @KeepFieldType
+      ProviderBookingsViewModel com_nammahomestay_app_ui_provider_booking_ProviderBookingsViewModel2;
+
+      @KeepFieldType
+      PricingViewModel com_nammahomestay_app_ui_provider_pricing_PricingViewModel2;
+
+      @KeepFieldType
+      ProfileSettingsViewModel com_nammahomestay_app_ui_traveler_settings_ProfileSettingsViewModel2;
+
+      @KeepFieldType
+      ProviderDashboardViewModel com_nammahomestay_app_ui_provider_dashboard_ProviderDashboardViewModel2;
+    }
+  }
+
+  private static final class ViewModelCImpl extends NammaHomeStayApp_HiltComponents.ViewModelC {
+    private final SavedStateHandle savedStateHandle;
+
+    private final SingletonCImpl singletonCImpl;
+
+    private final ActivityRetainedCImpl activityRetainedCImpl;
+
+    private final ViewModelCImpl viewModelCImpl = this;
+
+    private Provider<AuthViewModel> authViewModelProvider;
+
+    private Provider<BookingViewModel> bookingViewModelProvider;
+
+    private Provider<ChatViewModel> chatViewModelProvider;
+
+    private Provider<DailyMenuViewModel> dailyMenuViewModelProvider;
+
+    private Provider<ExploreViewModel> exploreViewModelProvider;
+
+    private Provider<FoodAnalyticsViewModel> foodAnalyticsViewModelProvider;
+
+    private Provider<FoodTicketViewModel> foodTicketViewModelProvider;
+
+    private Provider<FoodVerificationViewModel> foodVerificationViewModelProvider;
+
+    private Provider<HomeProfileViewModel> homeProfileViewModelProvider;
+
+    private Provider<InquiryBoxViewModel> inquiryBoxViewModelProvider;
+
+    private Provider<LocalGuideViewModel> localGuideViewModelProvider;
+
+    private Provider<MealBookingViewModel> mealBookingViewModelProvider;
+
+    private Provider<MyBookingsViewModel> myBookingsViewModelProvider;
+
+    private Provider<MyInquiriesViewModel> myInquiriesViewModelProvider;
+
+    private Provider<PricingViewModel> pricingViewModelProvider;
+
+    private Provider<ProfileSettingsViewModel> profileSettingsViewModelProvider;
+
+    private Provider<ProviderBookingsViewModel> providerBookingsViewModelProvider;
+
+    private Provider<ProviderDashboardViewModel> providerDashboardViewModelProvider;
+
+    private Provider<ProviderFoodTerminalViewModel> providerFoodTerminalViewModelProvider;
+
+    private Provider<QRScannerViewModel> qRScannerViewModelProvider;
+
+    private Provider<ReviewViewModel> reviewViewModelProvider;
+
+    private Provider<SendInquiryViewModel> sendInquiryViewModelProvider;
+
+    private Provider<TravelerDashboardViewModel> travelerDashboardViewModelProvider;
+
+    private ViewModelCImpl(SingletonCImpl singletonCImpl,
+        ActivityRetainedCImpl activityRetainedCImpl, SavedStateHandle savedStateHandleParam,
+        ViewModelLifecycle viewModelLifecycleParam) {
+      this.singletonCImpl = singletonCImpl;
+      this.activityRetainedCImpl = activityRetainedCImpl;
+      this.savedStateHandle = savedStateHandleParam;
+      initialize(savedStateHandleParam, viewModelLifecycleParam);
+
+    }
+
+    @SuppressWarnings("unchecked")
+    private void initialize(final SavedStateHandle savedStateHandleParam,
+        final ViewModelLifecycle viewModelLifecycleParam) {
+      this.authViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 0);
+      this.bookingViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 1);
+      this.chatViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 2);
+      this.dailyMenuViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 3);
+      this.exploreViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 4);
+      this.foodAnalyticsViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 5);
+      this.foodTicketViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 6);
+      this.foodVerificationViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 7);
+      this.homeProfileViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 8);
+      this.inquiryBoxViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 9);
+      this.localGuideViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 10);
+      this.mealBookingViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 11);
+      this.myBookingsViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 12);
+      this.myInquiriesViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 13);
+      this.pricingViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 14);
+      this.profileSettingsViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 15);
+      this.providerBookingsViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 16);
+      this.providerDashboardViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 17);
+      this.providerFoodTerminalViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 18);
+      this.qRScannerViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 19);
+      this.reviewViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 20);
+      this.sendInquiryViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 21);
+      this.travelerDashboardViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 22);
+    }
+
+    @Override
+    public Map<Class<?>, javax.inject.Provider<ViewModel>> getHiltViewModelMap() {
+      return LazyClassKeyMap.<javax.inject.Provider<ViewModel>>of(ImmutableMap.<String, javax.inject.Provider<ViewModel>>builderWithExpectedSize(23).put(LazyClassKeyProvider.com_nammahomestay_app_ui_auth_AuthViewModel, ((Provider) authViewModelProvider)).put(LazyClassKeyProvider.com_nammahomestay_app_ui_traveler_booking_BookingViewModel, ((Provider) bookingViewModelProvider)).put(LazyClassKeyProvider.com_nammahomestay_app_ui_traveler_inquiry_ChatViewModel, ((Provider) chatViewModelProvider)).put(LazyClassKeyProvider.com_nammahomestay_app_ui_provider_menu_DailyMenuViewModel, ((Provider) dailyMenuViewModelProvider)).put(LazyClassKeyProvider.com_nammahomestay_app_ui_traveler_explore_ExploreViewModel, ((Provider) exploreViewModelProvider)).put(LazyClassKeyProvider.com_nammahomestay_app_ui_provider_food_FoodAnalyticsViewModel, ((Provider) foodAnalyticsViewModelProvider)).put(LazyClassKeyProvider.com_nammahomestay_app_ui_traveler_food_FoodTicketViewModel, ((Provider) foodTicketViewModelProvider)).put(LazyClassKeyProvider.com_nammahomestay_app_ui_provider_food_FoodVerificationViewModel, ((Provider) foodVerificationViewModelProvider)).put(LazyClassKeyProvider.com_nammahomestay_app_ui_provider_profile_HomeProfileViewModel, ((Provider) homeProfileViewModelProvider)).put(LazyClassKeyProvider.com_nammahomestay_app_ui_provider_inquiry_InquiryBoxViewModel, ((Provider) inquiryBoxViewModelProvider)).put(LazyClassKeyProvider.com_nammahomestay_app_ui_provider_localguide_LocalGuideViewModel, ((Provider) localGuideViewModelProvider)).put(LazyClassKeyProvider.com_nammahomestay_app_ui_traveler_food_MealBookingViewModel, ((Provider) mealBookingViewModelProvider)).put(LazyClassKeyProvider.com_nammahomestay_app_ui_traveler_booking_MyBookingsViewModel, ((Provider) myBookingsViewModelProvider)).put(LazyClassKeyProvider.com_nammahomestay_app_ui_traveler_inquiry_MyInquiriesViewModel, ((Provider) myInquiriesViewModelProvider)).put(LazyClassKeyProvider.com_nammahomestay_app_ui_provider_pricing_PricingViewModel, ((Provider) pricingViewModelProvider)).put(LazyClassKeyProvider.com_nammahomestay_app_ui_traveler_settings_ProfileSettingsViewModel, ((Provider) profileSettingsViewModelProvider)).put(LazyClassKeyProvider.com_nammahomestay_app_ui_provider_booking_ProviderBookingsViewModel, ((Provider) providerBookingsViewModelProvider)).put(LazyClassKeyProvider.com_nammahomestay_app_ui_provider_dashboard_ProviderDashboardViewModel, ((Provider) providerDashboardViewModelProvider)).put(LazyClassKeyProvider.com_nammahomestay_app_ui_provider_food_ProviderFoodTerminalViewModel, ((Provider) providerFoodTerminalViewModelProvider)).put(LazyClassKeyProvider.com_nammahomestay_app_ui_provider_verification_QRScannerViewModel, ((Provider) qRScannerViewModelProvider)).put(LazyClassKeyProvider.com_nammahomestay_app_ui_traveler_booking_ReviewViewModel, ((Provider) reviewViewModelProvider)).put(LazyClassKeyProvider.com_nammahomestay_app_ui_traveler_inquiry_SendInquiryViewModel, ((Provider) sendInquiryViewModelProvider)).put(LazyClassKeyProvider.com_nammahomestay_app_ui_traveler_dashboard_TravelerDashboardViewModel, ((Provider) travelerDashboardViewModelProvider)).build());
+    }
+
+    @Override
+    public Map<Class<?>, Object> getHiltViewModelAssistedMap() {
+      return ImmutableMap.<Class<?>, Object>of();
+    }
+
+    @IdentifierNameString
+    private static final class LazyClassKeyProvider {
+      static String com_nammahomestay_app_ui_traveler_inquiry_MyInquiriesViewModel = "com.nammahomestay.app.ui.traveler.inquiry.MyInquiriesViewModel";
+
+      static String com_nammahomestay_app_ui_provider_profile_HomeProfileViewModel = "com.nammahomestay.app.ui.provider.profile.HomeProfileViewModel";
+
+      static String com_nammahomestay_app_ui_provider_localguide_LocalGuideViewModel = "com.nammahomestay.app.ui.provider.localguide.LocalGuideViewModel";
+
+      static String com_nammahomestay_app_ui_provider_booking_ProviderBookingsViewModel = "com.nammahomestay.app.ui.provider.booking.ProviderBookingsViewModel";
+
+      static String com_nammahomestay_app_ui_traveler_booking_ReviewViewModel = "com.nammahomestay.app.ui.traveler.booking.ReviewViewModel";
+
+      static String com_nammahomestay_app_ui_provider_food_FoodAnalyticsViewModel = "com.nammahomestay.app.ui.provider.food.FoodAnalyticsViewModel";
+
+      static String com_nammahomestay_app_ui_provider_dashboard_ProviderDashboardViewModel = "com.nammahomestay.app.ui.provider.dashboard.ProviderDashboardViewModel";
+
+      static String com_nammahomestay_app_ui_provider_pricing_PricingViewModel = "com.nammahomestay.app.ui.provider.pricing.PricingViewModel";
+
+      static String com_nammahomestay_app_ui_traveler_explore_ExploreViewModel = "com.nammahomestay.app.ui.traveler.explore.ExploreViewModel";
+
+      static String com_nammahomestay_app_ui_traveler_settings_ProfileSettingsViewModel = "com.nammahomestay.app.ui.traveler.settings.ProfileSettingsViewModel";
+
+      static String com_nammahomestay_app_ui_provider_food_ProviderFoodTerminalViewModel = "com.nammahomestay.app.ui.provider.food.ProviderFoodTerminalViewModel";
+
+      static String com_nammahomestay_app_ui_traveler_inquiry_SendInquiryViewModel = "com.nammahomestay.app.ui.traveler.inquiry.SendInquiryViewModel";
+
+      static String com_nammahomestay_app_ui_traveler_booking_MyBookingsViewModel = "com.nammahomestay.app.ui.traveler.booking.MyBookingsViewModel";
+
+      static String com_nammahomestay_app_ui_provider_food_FoodVerificationViewModel = "com.nammahomestay.app.ui.provider.food.FoodVerificationViewModel";
+
+      static String com_nammahomestay_app_ui_traveler_food_MealBookingViewModel = "com.nammahomestay.app.ui.traveler.food.MealBookingViewModel";
+
+      static String com_nammahomestay_app_ui_traveler_dashboard_TravelerDashboardViewModel = "com.nammahomestay.app.ui.traveler.dashboard.TravelerDashboardViewModel";
+
+      static String com_nammahomestay_app_ui_traveler_food_FoodTicketViewModel = "com.nammahomestay.app.ui.traveler.food.FoodTicketViewModel";
+
+      static String com_nammahomestay_app_ui_provider_menu_DailyMenuViewModel = "com.nammahomestay.app.ui.provider.menu.DailyMenuViewModel";
+
+      static String com_nammahomestay_app_ui_provider_inquiry_InquiryBoxViewModel = "com.nammahomestay.app.ui.provider.inquiry.InquiryBoxViewModel";
+
+      static String com_nammahomestay_app_ui_traveler_booking_BookingViewModel = "com.nammahomestay.app.ui.traveler.booking.BookingViewModel";
+
+      static String com_nammahomestay_app_ui_traveler_inquiry_ChatViewModel = "com.nammahomestay.app.ui.traveler.inquiry.ChatViewModel";
+
+      static String com_nammahomestay_app_ui_provider_verification_QRScannerViewModel = "com.nammahomestay.app.ui.provider.verification.QRScannerViewModel";
+
+      static String com_nammahomestay_app_ui_auth_AuthViewModel = "com.nammahomestay.app.ui.auth.AuthViewModel";
+
+      @KeepFieldType
+      MyInquiriesViewModel com_nammahomestay_app_ui_traveler_inquiry_MyInquiriesViewModel2;
+
+      @KeepFieldType
+      HomeProfileViewModel com_nammahomestay_app_ui_provider_profile_HomeProfileViewModel2;
+
+      @KeepFieldType
+      LocalGuideViewModel com_nammahomestay_app_ui_provider_localguide_LocalGuideViewModel2;
+
+      @KeepFieldType
+      ProviderBookingsViewModel com_nammahomestay_app_ui_provider_booking_ProviderBookingsViewModel2;
+
+      @KeepFieldType
+      ReviewViewModel com_nammahomestay_app_ui_traveler_booking_ReviewViewModel2;
+
+      @KeepFieldType
+      FoodAnalyticsViewModel com_nammahomestay_app_ui_provider_food_FoodAnalyticsViewModel2;
+
+      @KeepFieldType
+      ProviderDashboardViewModel com_nammahomestay_app_ui_provider_dashboard_ProviderDashboardViewModel2;
+
+      @KeepFieldType
+      PricingViewModel com_nammahomestay_app_ui_provider_pricing_PricingViewModel2;
+
+      @KeepFieldType
+      ExploreViewModel com_nammahomestay_app_ui_traveler_explore_ExploreViewModel2;
+
+      @KeepFieldType
+      ProfileSettingsViewModel com_nammahomestay_app_ui_traveler_settings_ProfileSettingsViewModel2;
+
+      @KeepFieldType
+      ProviderFoodTerminalViewModel com_nammahomestay_app_ui_provider_food_ProviderFoodTerminalViewModel2;
+
+      @KeepFieldType
+      SendInquiryViewModel com_nammahomestay_app_ui_traveler_inquiry_SendInquiryViewModel2;
+
+      @KeepFieldType
+      MyBookingsViewModel com_nammahomestay_app_ui_traveler_booking_MyBookingsViewModel2;
+
+      @KeepFieldType
+      FoodVerificationViewModel com_nammahomestay_app_ui_provider_food_FoodVerificationViewModel2;
+
+      @KeepFieldType
+      MealBookingViewModel com_nammahomestay_app_ui_traveler_food_MealBookingViewModel2;
+
+      @KeepFieldType
+      TravelerDashboardViewModel com_nammahomestay_app_ui_traveler_dashboard_TravelerDashboardViewModel2;
+
+      @KeepFieldType
+      FoodTicketViewModel com_nammahomestay_app_ui_traveler_food_FoodTicketViewModel2;
+
+      @KeepFieldType
+      DailyMenuViewModel com_nammahomestay_app_ui_provider_menu_DailyMenuViewModel2;
+
+      @KeepFieldType
+      InquiryBoxViewModel com_nammahomestay_app_ui_provider_inquiry_InquiryBoxViewModel2;
+
+      @KeepFieldType
+      BookingViewModel com_nammahomestay_app_ui_traveler_booking_BookingViewModel2;
+
+      @KeepFieldType
+      ChatViewModel com_nammahomestay_app_ui_traveler_inquiry_ChatViewModel2;
+
+      @KeepFieldType
+      QRScannerViewModel com_nammahomestay_app_ui_provider_verification_QRScannerViewModel2;
+
+      @KeepFieldType
+      AuthViewModel com_nammahomestay_app_ui_auth_AuthViewModel2;
+    }
+
+    private static final class SwitchingProvider<T> implements Provider<T> {
+      private final SingletonCImpl singletonCImpl;
+
+      private final ActivityRetainedCImpl activityRetainedCImpl;
+
+      private final ViewModelCImpl viewModelCImpl;
+
+      private final int id;
+
+      SwitchingProvider(SingletonCImpl singletonCImpl, ActivityRetainedCImpl activityRetainedCImpl,
+          ViewModelCImpl viewModelCImpl, int id) {
+        this.singletonCImpl = singletonCImpl;
+        this.activityRetainedCImpl = activityRetainedCImpl;
+        this.viewModelCImpl = viewModelCImpl;
+        this.id = id;
+      }
+
+      @SuppressWarnings("unchecked")
+      @Override
+      public T get() {
+        switch (id) {
+          case 0: // com.nammahomestay.app.ui.auth.AuthViewModel 
+          return (T) new AuthViewModel(singletonCImpl.authRepositoryProvider.get());
+
+          case 1: // com.nammahomestay.app.ui.traveler.booking.BookingViewModel 
+          return (T) new BookingViewModel(ApplicationContextModule_ProvideContextFactory.provideContext(singletonCImpl.applicationContextModule), singletonCImpl.authRepositoryProvider.get(), singletonCImpl.homeStayRepositoryProvider.get(), singletonCImpl.bookingRepositoryProvider.get(), viewModelCImpl.savedStateHandle);
+
+          case 2: // com.nammahomestay.app.ui.traveler.inquiry.ChatViewModel 
+          return (T) new ChatViewModel(singletonCImpl.inquiryRepositoryProvider.get(), singletonCImpl.authRepositoryProvider.get(), singletonCImpl.homeStayRepositoryProvider.get());
+
+          case 3: // com.nammahomestay.app.ui.provider.menu.DailyMenuViewModel 
+          return (T) new DailyMenuViewModel(singletonCImpl.menuRepositoryProvider.get(), singletonCImpl.homeStayRepositoryProvider.get(), singletonCImpl.authRepositoryProvider.get());
+
+          case 4: // com.nammahomestay.app.ui.traveler.explore.ExploreViewModel 
+          return (T) new ExploreViewModel(singletonCImpl.homeStayRepositoryProvider.get(), singletonCImpl.bookingRepositoryProvider.get(), singletonCImpl.authRepositoryProvider.get());
+
+          case 5: // com.nammahomestay.app.ui.provider.food.FoodAnalyticsViewModel 
+          return (T) new FoodAnalyticsViewModel(singletonCImpl.foodRepositoryProvider.get(), singletonCImpl.authRepositoryProvider.get());
+
+          case 6: // com.nammahomestay.app.ui.traveler.food.FoodTicketViewModel 
+          return (T) new FoodTicketViewModel(singletonCImpl.foodRepositoryProvider.get());
+
+          case 7: // com.nammahomestay.app.ui.provider.food.FoodVerificationViewModel 
+          return (T) new FoodVerificationViewModel(singletonCImpl.foodRepositoryProvider.get());
+
+          case 8: // com.nammahomestay.app.ui.provider.profile.HomeProfileViewModel 
+          return (T) new HomeProfileViewModel(singletonCImpl.homeStayRepositoryProvider.get(), singletonCImpl.userRepositoryProvider.get(), singletonCImpl.inquiryRepositoryProvider.get(), singletonCImpl.authRepositoryProvider.get());
+
+          case 9: // com.nammahomestay.app.ui.provider.inquiry.InquiryBoxViewModel 
+          return (T) new InquiryBoxViewModel(singletonCImpl.inquiryRepositoryProvider.get(), singletonCImpl.homeStayRepositoryProvider.get(), singletonCImpl.authRepositoryProvider.get());
+
+          case 10: // com.nammahomestay.app.ui.provider.localguide.LocalGuideViewModel 
+          return (T) new LocalGuideViewModel(singletonCImpl.localSpotRepositoryProvider.get(), singletonCImpl.authRepositoryProvider.get());
+
+          case 11: // com.nammahomestay.app.ui.traveler.food.MealBookingViewModel 
+          return (T) new MealBookingViewModel(singletonCImpl.foodRepositoryProvider.get(), singletonCImpl.homeStayRepositoryProvider.get(), singletonCImpl.bookingRepositoryProvider.get(), singletonCImpl.authRepositoryProvider.get());
+
+          case 12: // com.nammahomestay.app.ui.traveler.booking.MyBookingsViewModel 
+          return (T) new MyBookingsViewModel(singletonCImpl.bookingRepositoryProvider.get(), singletonCImpl.authRepositoryProvider.get());
+
+          case 13: // com.nammahomestay.app.ui.traveler.inquiry.MyInquiriesViewModel 
+          return (T) new MyInquiriesViewModel(singletonCImpl.inquiryRepositoryProvider.get(), singletonCImpl.authRepositoryProvider.get());
+
+          case 14: // com.nammahomestay.app.ui.provider.pricing.PricingViewModel 
+          return (T) new PricingViewModel(singletonCImpl.homeStayRepositoryProvider.get(), singletonCImpl.authRepositoryProvider.get());
+
+          case 15: // com.nammahomestay.app.ui.traveler.settings.ProfileSettingsViewModel 
+          return (T) new ProfileSettingsViewModel(singletonCImpl.userRepositoryProvider.get(), singletonCImpl.authRepositoryProvider.get());
+
+          case 16: // com.nammahomestay.app.ui.provider.booking.ProviderBookingsViewModel 
+          return (T) new ProviderBookingsViewModel(ApplicationContextModule_ProvideContextFactory.provideContext(singletonCImpl.applicationContextModule), singletonCImpl.bookingRepositoryProvider.get(), singletonCImpl.authRepositoryProvider.get());
+
+          case 17: // com.nammahomestay.app.ui.provider.dashboard.ProviderDashboardViewModel 
+          return (T) new ProviderDashboardViewModel(singletonCImpl.homeStayRepositoryProvider.get(), singletonCImpl.userRepositoryProvider.get(), singletonCImpl.inquiryRepositoryProvider.get(), singletonCImpl.authRepositoryProvider.get());
+
+          case 18: // com.nammahomestay.app.ui.provider.food.ProviderFoodTerminalViewModel 
+          return (T) new ProviderFoodTerminalViewModel(singletonCImpl.homeStayRepositoryProvider.get(), singletonCImpl.foodRepositoryProvider.get(), singletonCImpl.authRepositoryProvider.get());
+
+          case 19: // com.nammahomestay.app.ui.provider.verification.QRScannerViewModel 
+          return (T) new QRScannerViewModel(singletonCImpl.bookingRepositoryProvider.get(), singletonCImpl.foodRepositoryProvider.get());
+
+          case 20: // com.nammahomestay.app.ui.traveler.booking.ReviewViewModel 
+          return (T) new ReviewViewModel(viewModelCImpl.savedStateHandle, singletonCImpl.authRepositoryProvider.get(), singletonCImpl.bookingRepositoryProvider.get(), singletonCImpl.homeStayRepositoryProvider.get());
+
+          case 21: // com.nammahomestay.app.ui.traveler.inquiry.SendInquiryViewModel 
+          return (T) new SendInquiryViewModel(singletonCImpl.inquiryRepositoryProvider.get(), singletonCImpl.authRepositoryProvider.get(), singletonCImpl.homeStayRepositoryProvider.get());
+
+          case 22: // com.nammahomestay.app.ui.traveler.dashboard.TravelerDashboardViewModel 
+          return (T) new TravelerDashboardViewModel(singletonCImpl.homeStayRepositoryProvider.get(), singletonCImpl.bookingRepositoryProvider.get(), singletonCImpl.authRepositoryProvider.get());
+
+          default: throw new AssertionError(id);
+        }
+      }
+    }
+  }
+
+  private static final class ActivityRetainedCImpl extends NammaHomeStayApp_HiltComponents.ActivityRetainedC {
+    private final SingletonCImpl singletonCImpl;
+
+    private final ActivityRetainedCImpl activityRetainedCImpl = this;
+
+    private Provider<ActivityRetainedLifecycle> provideActivityRetainedLifecycleProvider;
+
+    private ActivityRetainedCImpl(SingletonCImpl singletonCImpl,
+        SavedStateHandleHolder savedStateHandleHolderParam) {
+      this.singletonCImpl = singletonCImpl;
+
+      initialize(savedStateHandleHolderParam);
+
+    }
+
+    @SuppressWarnings("unchecked")
+    private void initialize(final SavedStateHandleHolder savedStateHandleHolderParam) {
+      this.provideActivityRetainedLifecycleProvider = DoubleCheck.provider(new SwitchingProvider<ActivityRetainedLifecycle>(singletonCImpl, activityRetainedCImpl, 0));
+    }
+
+    @Override
+    public ActivityComponentBuilder activityComponentBuilder() {
+      return new ActivityCBuilder(singletonCImpl, activityRetainedCImpl);
+    }
+
+    @Override
+    public ActivityRetainedLifecycle getActivityRetainedLifecycle() {
+      return provideActivityRetainedLifecycleProvider.get();
+    }
+
+    private static final class SwitchingProvider<T> implements Provider<T> {
+      private final SingletonCImpl singletonCImpl;
+
+      private final ActivityRetainedCImpl activityRetainedCImpl;
+
+      private final int id;
+
+      SwitchingProvider(SingletonCImpl singletonCImpl, ActivityRetainedCImpl activityRetainedCImpl,
+          int id) {
+        this.singletonCImpl = singletonCImpl;
+        this.activityRetainedCImpl = activityRetainedCImpl;
+        this.id = id;
+      }
+
+      @SuppressWarnings("unchecked")
+      @Override
+      public T get() {
+        switch (id) {
+          case 0: // dagger.hilt.android.ActivityRetainedLifecycle 
+          return (T) ActivityRetainedComponentManager_LifecycleModule_ProvideActivityRetainedLifecycleFactory.provideActivityRetainedLifecycle();
+
+          default: throw new AssertionError(id);
+        }
+      }
+    }
+  }
+
+  private static final class ServiceCImpl extends NammaHomeStayApp_HiltComponents.ServiceC {
+    private final SingletonCImpl singletonCImpl;
+
+    private final ServiceCImpl serviceCImpl = this;
+
+    private ServiceCImpl(SingletonCImpl singletonCImpl, Service serviceParam) {
+      this.singletonCImpl = singletonCImpl;
+
+
+    }
+
+    @Override
+    public void injectNammaFirebaseMessagingService(NammaFirebaseMessagingService arg0) {
+      injectNammaFirebaseMessagingService2(arg0);
+    }
+
+    @CanIgnoreReturnValue
+    private NammaFirebaseMessagingService injectNammaFirebaseMessagingService2(
+        NammaFirebaseMessagingService instance) {
+      NammaFirebaseMessagingService_MembersInjector.injectAuthRepository(instance, singletonCImpl.authRepositoryProvider.get());
+      NammaFirebaseMessagingService_MembersInjector.injectUserRepository(instance, singletonCImpl.userRepositoryProvider.get());
+      return instance;
+    }
+  }
+
+  private static final class SingletonCImpl extends NammaHomeStayApp_HiltComponents.SingletonC {
+    private final ApplicationContextModule applicationContextModule;
+
+    private final SingletonCImpl singletonCImpl = this;
+
+    private Provider<FirebaseFirestore> provideFirebaseFirestoreProvider;
+
+    private Provider<FirestoreInitializer> firestoreInitializerProvider;
+
+    private Provider<FirebaseAuth> provideFirebaseAuthProvider;
+
+    private Provider<AuthRepository> authRepositoryProvider;
+
+    private Provider<FirebaseStorage> provideFirebaseStorageProvider;
+
+    private Provider<HomeStayRepository> homeStayRepositoryProvider;
+
+    private Provider<BookingRepository> bookingRepositoryProvider;
+
+    private Provider<InquiryRepository> inquiryRepositoryProvider;
+
+    private Provider<MenuRepository> menuRepositoryProvider;
+
+    private Provider<FoodRepository> foodRepositoryProvider;
+
+    private Provider<UserRepository> userRepositoryProvider;
+
+    private Provider<LocalSpotRepository> localSpotRepositoryProvider;
+
+    private SingletonCImpl(ApplicationContextModule applicationContextModuleParam) {
+      this.applicationContextModule = applicationContextModuleParam;
+      initialize(applicationContextModuleParam);
+
+    }
+
+    @SuppressWarnings("unchecked")
+    private void initialize(final ApplicationContextModule applicationContextModuleParam) {
+      this.provideFirebaseFirestoreProvider = DoubleCheck.provider(new SwitchingProvider<FirebaseFirestore>(singletonCImpl, 1));
+      this.firestoreInitializerProvider = DoubleCheck.provider(new SwitchingProvider<FirestoreInitializer>(singletonCImpl, 0));
+      this.provideFirebaseAuthProvider = DoubleCheck.provider(new SwitchingProvider<FirebaseAuth>(singletonCImpl, 3));
+      this.authRepositoryProvider = DoubleCheck.provider(new SwitchingProvider<AuthRepository>(singletonCImpl, 2));
+      this.provideFirebaseStorageProvider = DoubleCheck.provider(new SwitchingProvider<FirebaseStorage>(singletonCImpl, 5));
+      this.homeStayRepositoryProvider = DoubleCheck.provider(new SwitchingProvider<HomeStayRepository>(singletonCImpl, 4));
+      this.bookingRepositoryProvider = DoubleCheck.provider(new SwitchingProvider<BookingRepository>(singletonCImpl, 6));
+      this.inquiryRepositoryProvider = DoubleCheck.provider(new SwitchingProvider<InquiryRepository>(singletonCImpl, 7));
+      this.menuRepositoryProvider = DoubleCheck.provider(new SwitchingProvider<MenuRepository>(singletonCImpl, 8));
+      this.foodRepositoryProvider = DoubleCheck.provider(new SwitchingProvider<FoodRepository>(singletonCImpl, 9));
+      this.userRepositoryProvider = DoubleCheck.provider(new SwitchingProvider<UserRepository>(singletonCImpl, 10));
+      this.localSpotRepositoryProvider = DoubleCheck.provider(new SwitchingProvider<LocalSpotRepository>(singletonCImpl, 11));
+    }
+
+    @Override
+    public void injectNammaHomeStayApp(NammaHomeStayApp nammaHomeStayApp) {
+      injectNammaHomeStayApp2(nammaHomeStayApp);
+    }
+
+    @Override
+    public Set<Boolean> getDisableFragmentGetContextFix() {
+      return ImmutableSet.<Boolean>of();
+    }
+
+    @Override
+    public ActivityRetainedComponentBuilder retainedComponentBuilder() {
+      return new ActivityRetainedCBuilder(singletonCImpl);
+    }
+
+    @Override
+    public ServiceComponentBuilder serviceComponentBuilder() {
+      return new ServiceCBuilder(singletonCImpl);
+    }
+
+    @CanIgnoreReturnValue
+    private NammaHomeStayApp injectNammaHomeStayApp2(NammaHomeStayApp instance) {
+      NammaHomeStayApp_MembersInjector.injectFirestoreInitializer(instance, firestoreInitializerProvider.get());
+      return instance;
+    }
+
+    private static final class SwitchingProvider<T> implements Provider<T> {
+      private final SingletonCImpl singletonCImpl;
+
+      private final int id;
+
+      SwitchingProvider(SingletonCImpl singletonCImpl, int id) {
+        this.singletonCImpl = singletonCImpl;
+        this.id = id;
+      }
+
+      @SuppressWarnings("unchecked")
+      @Override
+      public T get() {
+        switch (id) {
+          case 0: // com.nammahomestay.app.util.FirestoreInitializer 
+          return (T) new FirestoreInitializer(singletonCImpl.provideFirebaseFirestoreProvider.get());
+
+          case 1: // com.google.firebase.firestore.FirebaseFirestore 
+          return (T) FirebaseModule_ProvideFirebaseFirestoreFactory.provideFirebaseFirestore();
+
+          case 2: // com.nammahomestay.app.data.repository.AuthRepository 
+          return (T) new AuthRepository(singletonCImpl.provideFirebaseAuthProvider.get(), singletonCImpl.provideFirebaseFirestoreProvider.get());
+
+          case 3: // com.google.firebase.auth.FirebaseAuth 
+          return (T) FirebaseModule_ProvideFirebaseAuthFactory.provideFirebaseAuth();
+
+          case 4: // com.nammahomestay.app.data.repository.HomeStayRepository 
+          return (T) new HomeStayRepository(singletonCImpl.provideFirebaseFirestoreProvider.get(), singletonCImpl.provideFirebaseStorageProvider.get());
+
+          case 5: // com.google.firebase.storage.FirebaseStorage 
+          return (T) FirebaseModule_ProvideFirebaseStorageFactory.provideFirebaseStorage();
+
+          case 6: // com.nammahomestay.app.data.repository.BookingRepository 
+          return (T) new BookingRepository(singletonCImpl.provideFirebaseFirestoreProvider.get());
+
+          case 7: // com.nammahomestay.app.data.repository.InquiryRepository 
+          return (T) new InquiryRepository(singletonCImpl.provideFirebaseFirestoreProvider.get());
+
+          case 8: // com.nammahomestay.app.data.repository.MenuRepository 
+          return (T) new MenuRepository(singletonCImpl.provideFirebaseFirestoreProvider.get());
+
+          case 9: // com.nammahomestay.app.data.repository.FoodRepository 
+          return (T) new FoodRepository(singletonCImpl.provideFirebaseFirestoreProvider.get());
+
+          case 10: // com.nammahomestay.app.data.repository.UserRepository 
+          return (T) new UserRepository(singletonCImpl.provideFirebaseFirestoreProvider.get());
+
+          case 11: // com.nammahomestay.app.data.repository.LocalSpotRepository 
+          return (T) new LocalSpotRepository(singletonCImpl.provideFirebaseFirestoreProvider.get());
+
+          default: throw new AssertionError(id);
+        }
+      }
+    }
+  }
+}
